@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"github.com/kanbara/aoc2020/input"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -32,68 +29,6 @@ func (p *Pass) Read(raw string) {
 		(*p)[key(s[0])] = s[1]
 	}
 }
-
-func readPassFile(filename string) ([]string, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	scanner := bufio.NewScanner(f)
-	// This split function passes double-newline-delimited tokens, which allows
-	// us to get the entire string for each line automatically
-	split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-
-		if i := bytes.Index(data, []byte{'\n', '\n'}); i >= 0 {
-			// we don't want any newlines in our output, so the token will be
-			// the entire keyval
-
-			// trim the end and replace the inners with spaces
-			// f.e.
-			// a
-			// b\n
-			// c\n
-			// \n
-			//
-			// -> a b c, not a bc
-			trimmed := bytes.TrimSpace(data[0:i+1])
-			fixed := bytes.ReplaceAll(trimmed, []byte{'\n'}, []byte{' '})
-			// we still return i+1 bytes here as we need to consume that
-			// much of the original buffer
-			return i+1, fixed, nil
-		}
-
-		// If we're at EOF, we have a final, non-terminated line. Return it.
-		if atEOF {
-			trimmed := bytes.TrimSpace(data)
-			fixed := bytes.ReplaceAll(trimmed, []byte{'\n'}, []byte{' '})
-			return len(data), fixed, nil
-		}
-
-		// Request more data.
-		return 0, nil, nil
-	}
-
-	// Set the split function for the scanning operation.
-	scanner.Split(split)
-	// Validate the input
-
-	var data []string
-	for scanner.Scan() {
-		data = append(data, scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("Invalid input: %s", err)
-	}
-
-	return data, nil
-}
-
-
 
 func (p *Pass) Valid() bool {
 	// can we be stupid and just check for 8 fields-- or 7 and only cid missing?
@@ -212,7 +147,7 @@ func isFieldValid(field key, val string) bool {
 }
 
 func main() {
-	data, err := readPassFile(input.DefaultFilename)
+	data, err := input.ReadFileSplitByEmptyLine(input.DefaultFilename)
 	if err != nil {
 		panic(err)
 	}
