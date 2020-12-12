@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/kanbara/aoc2020/input"
+	"math"
 	"sort"
 	"strconv"
 )
@@ -78,36 +79,31 @@ func main() {
 	_, _, _  = rowSeatAndID(highestIDStr)
 
 	sort.Ints(IDs)
-	var mine int
 
+	sum := 0
 	for i := range IDs {
-
-		if i <= 0 {
-			continue
-		}
-
-		if i >= len(IDs)-1 {
-			break
-		}
-		current := IDs[i]
-		diff := current - IDs[i+1]
-
-		switch diff {
-		case -2:
-			mine = current+1
-			break
-		case -1:
-			continue
-		case +1:
-			continue
-		case +2:
-			mine = current-1
-			break
-		}
+		sum += IDs[i]
 	}
 
-	if mine == len(IDs) {
-		panic("couldn't find seat\n")
+	min := IDs[0]
+	max := IDs[len(IDs)-1]
+
+	// min + min+1 + min+2 ... + max-1 + max
+	fmt.Printf("total sum with our missing seat from %v->%v: %v\n", min, max, sum)
+
+	// sum of series: n(n+1) / 2
+	// 0 + 1 + 2 + ... + n
+	fullSum := (max * (max + 1)) / 2
+	fmt.Printf("total sum from 0->%v: %v\n", max, fullSum)
+
+	// subtract values we don't have, e.g. 0 + 1 + 2 + ... m
+	subsetSum := (min * (min + 1)) / 2
+
+	// if we're odd we'll be off by min
+	if min % 2 != 0 {
+		subsetSum -= min
 	}
-	fmt.Printf("\nFound my seat, ID %v\n", mine)
+
+	fmt.Printf("removing subset 0->%v: %v\n", min, subsetSum)
+	fmt.Printf("\nFound my seat, ID %v\n", math.Abs(float64(sum - fullSum + subsetSum)))
 }
