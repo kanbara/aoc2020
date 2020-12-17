@@ -69,6 +69,26 @@ func getNumberOfBags(contains map[string][]bag, bags []bag) int {
 	return 0
 }
 
+
+// value is the current value of the bag containing `bags`
+// we are, in effect, computing the total value of the outer bag inside its own recursive subcall
+func getTotalBagsInside(contains map[string][]bag, bags []bag, value int) int {
+	c := 0
+	if len(bags) != 0 { // we have a proper base case now, bags == 0 and not
+		for k := range bags {
+			inner :=  getTotalBagsInside(contains, contains[bags[k].name], bags[k].count)
+			c += inner // recurse through each bag and add the contents
+		}
+
+		return c * value + value // return the bag * current bag value, and make sure to add the bags themselves
+		// e.g. shiny gold has 2 dark orange and 1 vibrant plum
+		// dark orange has 3 bright red and 4 drab purple, and vibrant plum has 1 banana yellow
+		// we have then 2 * (3+4) + 2  +   1 * 1 + 1
+ 	}
+
+	return value
+}
+
 func countBags(bags []bag, bagToFind string) int {
 	for i := range bags {
 		if bags[i].name == bagToFind {
@@ -103,4 +123,6 @@ func main() {
 	}
 
 	fmt.Printf("%v bag colours can contain `%v`\n", num, shinyGold)
+	fmt.Printf("%v has %v bags inside\n", shinyGold,
+		getTotalBagsInside(bags, bags[shinyGold], 1)-1) // -1 so we don't count our own shiny gold bag
 }
