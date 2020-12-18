@@ -42,41 +42,88 @@ func main() {
 			visited: false,
 		}
 	}
-	
-	fmt.Printf("accumulator just before infinite loop: %v\n", run(operations, infloop))
+
+	copied := make([]operation, len(operations))
+	copy(copied, operations)
+	// need to copy here so we don't overwrite all the visited values
+	fmt.Printf("accumulator just before infinite loop: %v\n\n", run(copied, infloop))
+	fmt.Printf("accumulator after successful execution: %v\n", mutateAndRun(operations))
 }
 
-//func mutate(operations []operation) int16 {
-//
-//}
+func mutateAndRun(operations []operation) int16 {
+	var mutations int
+	// the idea here is that we go through each instruction
+	// and for each time we see a jmp or nop we swap them and then add to the list, keeping track
+	// of the previous position, and once we've swapped all the operations (as only one needs to be swapped)
+	// we run them in goroutines, and collect the accumulated values-- programs which infinite loop
+	// will return 0, so we can just ignore it
 
-func infloop(operations []operation, i int16) bool {
+	var accumulated int16
+
+	for i := 0; i < len(operations); i++ {
+		switch operations[i].code {
+		case jmp:
+			fmt.Printf("Swapping jump at %v\n ", i)
+			mutations++
+			accumulated += run(swap(operations, i, nop), infloopOrEndNormally)
+		case nop:
+			fmt.Printf("Swapping nop at %v\n", i)
+			mutations++
+			accumulated += run(swap(operations, i, jmp), infloopOrEndNormally)
+		}
+	}
+
+	fmt.Printf("made %v mutations\n", mutations)
+	return accumulated
+}
+
+func swap(operations []operation, i int, newOp op) []operation {
+	c := make([]operation, len(operations))
+	copy(c, operations)
+
+	op := c[i]
+	op.code = newOp
+	c[i] = op
+
+	return c
+}
+
+func infloop(operations []operation, i int16, acc int16) (bool, int16) {
 	// infinite loop case, break
 	if operations[i].visited {
-		fmt.Printf("program will repeat at %v, (%v %+d)\n",
+		fmt.Printf("program will repeat at %v, (%v %+d)\n\n",
 			i, operations[i].code, operations[i].val)
-		return true
+		return true, acc
 	}
 
-	return false
+	return false, acc
 }
 
-func outofbounds(operations[] operation, i int16) bool {
+func infloopOrEndNormally(operations[] operation, i int16, acc int16) (bool, int16) {
 	// will we jump out of bounds of our stack?
-	if i > int16(len(operations)) {
-		return true
+	if i >= int16(len(operations)) {
+		fmt.Printf("program: %v\n", operations)
+		fmt.Printf("program exited normally\n\n")
+		return true, acc
 	}
 
-	return false
+	// do we infinite loop here?
+	// when we loop forever, just return 0 because we need to discard the value
+	if end, _ := infloop(operations, i, acc); end {
+		return true, 0
+	}
+
+	return false, acc
 }
 
-func run(operations []operation, endcondition func(operations[] operation, i int16) bool) int16 {
+func run(operations []operation,
+	endcondition func(operations[] operation, i int16, acc int16) (bool, int16)) int16 {
 	var accval int16
 	var i int16
 
 	for {
-		if endcondition(operations, i) {
-			return accval
+		if end, acc := endcondition(operations, i, accval); end {
+			return acc
 		}
 
 		var t int16 // tmp var here to reduce visited logic triplication
