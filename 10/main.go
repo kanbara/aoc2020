@@ -17,8 +17,13 @@ func main() {
 	deviceJoltage := data[len(data)-1]+3
 	fmt.Printf("highest joltage: %v\n", deviceJoltage)
 	data = append(data, deviceJoltage)
-	fmt.Printf("%v\n", data)
 
+	ones, threes := computeJoltageDiffs(data)
+	fmt.Printf("1-jolt difference %v, 3-jolt difference %v: %v\n", ones, threes, ones*threes)
+
+}
+
+func computeJoltageDiffs(data []int) (int, int) {
 	var ones int
 	var threes int
 
@@ -31,5 +36,5 @@ func main() {
 		}
 	}
 
-	fmt.Printf("1-jolt difference %v, 3-jolt difference %v: %v\n", ones, threes, ones*threes)
+	return ones, threes
 }
